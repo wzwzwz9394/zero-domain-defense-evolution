@@ -1910,7 +1910,7 @@ function endlessScalingForWave(number) {
   const cycle = Math.floor((number - 1) / Math.max(1, currentWaves().length || WAVES.length));
   return {
     stage,
-    hp: 1 + stage * 0.2 + cycle * 0.06,
+    hp: 1 + stage * 0.26 + cycle * 0.08,
     speed: Math.min(1.55, 1 + stage * 0.045),
     count: 1 + stage * 0.1 + cycle * 0.14,
     gap: Math.max(0.42, 1 - stage * 0.035 - cycle * 0.04),
