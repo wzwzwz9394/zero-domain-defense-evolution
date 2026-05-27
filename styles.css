@@ -1007,6 +1007,7 @@ body.is-level-select .app-shell {
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
+  position: relative;
   display: grid;
   place-items: center;
   color: var(--icon-color);
@@ -1017,6 +1018,62 @@ body.is-level-select .app-shell {
   border-radius: 7px;
   box-shadow: 0 0 18px color-mix(in srgb, currentColor 24%, transparent);
   overflow: hidden;
+}
+
+.codex-icon.is-ultimate {
+  border-color: #fff0a6;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 240, 166, 0.32), transparent 46%),
+    radial-gradient(circle at 35% 30%, color-mix(in srgb, currentColor 30%, transparent), transparent 58%),
+    #16130c;
+  box-shadow:
+    0 0 0 1px rgba(255, 240, 166, 0.22) inset,
+    0 0 22px color-mix(in srgb, currentColor 30%, transparent),
+    0 0 18px rgba(255, 240, 166, 0.24);
+}
+
+.codex-icon.is-ultimate::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(255, 240, 166, 0.48);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.tower-icon-level-2 {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, currentColor 22%, transparent) inset,
+    0 0 18px color-mix(in srgb, currentColor 24%, transparent);
+}
+
+.tower-icon-level-3 {
+  box-shadow:
+    0 0 0 1px rgba(234, 255, 246, 0.26) inset,
+    0 0 20px color-mix(in srgb, currentColor 30%, transparent);
+}
+
+.icon-badge {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 13px;
+  height: 13px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(234, 255, 246, 0.55);
+  background: rgba(8, 17, 15, 0.86);
+  color: #eafff6;
+  border-radius: 3px;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.codex-icon.is-ultimate .icon-badge {
+  border-color: rgba(255, 240, 166, 0.8);
+  background: rgba(42, 32, 9, 0.9);
+  color: #fff0a6;
 }
 
 .codex-enemy-icon {
@@ -1091,8 +1148,20 @@ body.is-level-select .app-shell {
   margin: 10px 0;
 }
 
+.ultimate-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  color: #ffe8a8;
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .codex-stats span,
-.aura-target-list span {
+.aura-target-list span,
+.ultimate-tags span,
+.ultimate-profile-stats span {
   min-height: 26px;
   display: inline-flex;
   align-items: center;
@@ -1102,6 +1171,82 @@ body.is-level-select .app-shell {
   border-radius: 999px;
   padding: 0 8px;
   font-size: 12px;
+}
+
+.tower-form-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 4px;
+  border-top: 1px solid #273236;
+  border-bottom: 1px solid #273236;
+  padding: 10px 0;
+}
+
+.tower-form {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+
+.tower-form .codex-icon {
+  grid-row: span 2;
+  width: 42px;
+  height: 42px;
+}
+
+.tower-form strong {
+  color: #eafff6;
+  font-size: 12px;
+}
+
+.tower-form span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tower-form.is-ultimate strong,
+.tower-form.is-ultimate span {
+  color: #ffe8a8;
+}
+
+.ultimate-profile {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  border-left: 3px solid #fff0a6;
+  padding-left: 10px;
+}
+
+.ultimate-profile h4 {
+  margin: 2px 0 4px;
+  color: #fff0a6;
+  font-size: 15px;
+}
+
+.ultimate-profile p {
+  margin: 0;
+}
+
+.ultimate-profile-stats,
+.ultimate-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ultimate-tags span,
+.ultimate-profile-stats span {
+  border-color: rgba(255, 221, 128, 0.38);
+  background: rgba(54, 41, 15, 0.34);
+  color: #ffe8a8;
 }
 
 .codex-note {
@@ -1145,6 +1290,17 @@ body.is-level-select .app-shell {
 .codex-table .ultimate-row td {
   background: rgba(54, 41, 15, 0.42);
   color: #ffe8a8;
+}
+
+.level-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-cell .codex-icon {
+  width: 30px;
+  height: 30px;
 }
 
 .codex-table td:first-child,
@@ -1324,6 +1480,10 @@ body.is-level-select .app-shell {
 
   .codex-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tower-form-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .map-grid {
@@ -1887,6 +2047,10 @@ body.is-level-select .app-shell {
 
 @media (max-width: 560px) {
   .entry-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .tower-form-strip {
     grid-template-columns: 1fr;
   }
 
