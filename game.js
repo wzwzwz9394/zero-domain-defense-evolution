@@ -1358,6 +1358,44 @@ const ULTIMATE_TRANSFORMS = {
   },
 };
 
+const ULTIMATE_VISUALS = {
+  gun: {
+    form: "四联超频炮",
+    visual: "四根高速炮管、侧置弹链舱和前端白色枪口灯，开火时像一座持续扫射的机炮阵列。",
+    tags: ["四管炮口", "弹链舱", "锁定叠伤"],
+  },
+  cannon: {
+    form: "裂变重炮",
+    visual: "炮口加厚并露出白热核心，塔身有裂变裂纹，命中后会留下醒目的灼烧区。",
+    tags: ["白热炮膛", "裂变裂纹", "灼烧区"],
+  },
+  ice: {
+    form: "零域冰晶",
+    visual: "塔身展开十向冰晶冠，外围出现雪晶节点，冰爆命中时带短暂冻结反馈。",
+    tags: ["冰晶冠", "冻结环", "绝对零域"],
+  },
+  pierce: {
+    form: "双轨穿刺炮",
+    visual: "上下双导轨夹住能量弹芯，攻击变成贯穿直线的轨道射击。",
+    tags: ["双导轨", "能量弹芯", "贯穿线"],
+  },
+  laser: {
+    form: "棱镜折射器",
+    visual: "前端展开白色棱镜，主束命中后分出多条支线，锁定角度时辨识更强。",
+    tags: ["棱镜镜头", "三向折射", "锁定准线"],
+  },
+  shock: {
+    form: "震荡反应堆",
+    visual: "核心外扩成双层震荡环，释放时伴随闪电状余震线。",
+    tags: ["双层冲击环", "余震线", "稳定眩晕"],
+  },
+  aura: {
+    form: "指挥中枢",
+    visual: "顶部出现指挥冠和四个环绕节点，选中时用多色连线显示射程、伤害、频率加成。",
+    tags: ["指挥冠", "环绕节点", "多色增益线"],
+  },
+};
+
 const TERRAIN_TYPES = {
   high: {
     name: "高台",
@@ -4547,16 +4585,21 @@ function drawAuraTargetLink(origin, item) {
   const def = TOWER_TYPES[item.tower.type];
   const ultimateSource = towerHasUltimate(state.towers.find((tower) => tower.id === state.selectedTowerId));
   ctx.save();
-  ctx.strokeStyle = item.active
-    ? ultimateSource
-      ? "rgba(255,240,166,0.7)"
-      : "rgba(196,181,253,0.62)"
-    : "rgba(157,176,173,0.28)";
-  ctx.lineWidth = item.active ? 3 : 2;
-  ctx.beginPath();
-  ctx.moveTo(origin.x, origin.y);
-  ctx.lineTo(target.x, target.y);
-  ctx.stroke();
+  const linkColors = auraLinkColors(item.boost, item.active, ultimateSource);
+  const normalX = target.y - origin.y;
+  const normalY = origin.x - target.x;
+  const normalLength = Math.hypot(normalX, normalY) || 1;
+  linkColors.forEach((color, index) => {
+    const offset = (index - (linkColors.length - 1) / 2) * 4;
+    const ox = (normalX / normalLength) * offset;
+    const oy = (normalY / normalLength) * offset;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = item.active ? 2.4 : 2;
+    ctx.beginPath();
+    ctx.moveTo(origin.x + ox, origin.y + oy);
+    ctx.lineTo(target.x + ox, target.y + oy);
+    ctx.stroke();
+  });
 
   ctx.fillStyle = item.active ? "rgba(41, 32, 68, 0.92)" : "rgba(17, 24, 25, 0.86)";
   ctx.strokeStyle = item.active ? "rgba(196,181,253,0.86)" : "rgba(95,117,110,0.72)";
@@ -4570,6 +4613,16 @@ function drawAuraTargetLink(origin, item) {
   ctx.font = "bold 12px sans-serif";
   ctx.fillText(label, labelX + 8, labelY + 17);
   ctx.restore();
+}
+
+function auraLinkColors(boost, active, ultimateSource) {
+  if (!active) return ["rgba(157,176,173,0.28)"];
+  if (!ultimateSource) return ["rgba(196,181,253,0.62)"];
+  const colors = [];
+  if (boost.range > 1) colors.push("rgba(98,200,220,0.78)");
+  if (boost.damage > 1) colors.push("rgba(239,199,94,0.8)");
+  if (boost.fireRate > 1) colors.push("rgba(107,211,154,0.78)");
+  return colors.length ? colors : ["rgba(255,240,166,0.7)"];
 }
 
 function drawAuraBoostMark(tower, c) {
@@ -4619,11 +4672,29 @@ function drawTowerShell(c, def, level, selected, ultimate = false) {
   }
   if (ultimate) {
     const pulse = 0.5 + Math.sin(performance.now() / 280) * 0.5;
+    ctx.fillStyle = `rgba(255, 240, 166, ${0.05 + pulse * 0.05})`;
+    ctx.fillRect(c.x - half - 6, c.y - half - 6, (half + 6) * 2, (half + 6) * 2);
     ctx.strokeStyle = `rgba(255, 240, 166, ${0.62 + pulse * 0.24})`;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(c.x, c.y, 27 + pulse * 2, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${0.32 + pulse * 0.18})`;
+    ctx.lineWidth = 2;
+    const outer = half + 8;
+    const corner = 9;
+    [
+      [-1, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+    ].forEach(([sx, sy]) => {
+      ctx.beginPath();
+      ctx.moveTo(c.x + sx * outer, c.y + sy * (outer - corner));
+      ctx.lineTo(c.x + sx * outer, c.y + sy * outer);
+      ctx.lineTo(c.x + sx * (outer - corner), c.y + sy * outer);
+      ctx.stroke();
+    });
     ctx.strokeStyle = def.color;
     ctx.globalAlpha = 0.42;
     ctx.beginPath();
@@ -4637,9 +4708,10 @@ function drawTowerShape(c, tower, def) {
   ctx.save();
   ctx.translate(c.x, c.y);
   if (tower.type !== "ice" && tower.type !== "aura") ctx.rotate(tower.angle || 0);
-  if (tower.ultimate) {
+  const ultimateVisual = tower.ultimate || tower.ultimateTimer > 0;
+  if (ultimateVisual) {
     ctx.shadowColor = "#fff0a6";
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = tower.ultimate ? 13 : 8;
   }
   ctx.fillStyle = def.color;
   ctx.strokeStyle = def.color;
@@ -4651,67 +4723,170 @@ function drawTowerShape(c, tower, def) {
   if (tower.type === "laser") drawLaserTower(tower.level);
   if (tower.type === "shock") drawShockTower(tower.level);
   if (tower.type === "aura") drawAuraTower(tower.level);
-  if (tower.ultimate) drawUltimateTowerOverlay(tower.type);
+  if (ultimateVisual) drawUltimateTowerOverlay(tower.type, tower.ultimateTimer > 0);
   ctx.restore();
 }
 
-function drawUltimateTowerOverlay(type) {
+function drawUltimateTowerOverlay(type, charging = false) {
   ctx.save();
+  const pulse = 0.5 + Math.sin(performance.now() / 230) * 0.5;
   ctx.shadowBlur = 0;
   ctx.strokeStyle = "#fff0a6";
   ctx.fillStyle = "#fff0a6";
   ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  ctx.globalAlpha = charging ? 0.66 : 0.95;
+  ctx.beginPath();
+  ctx.arc(0, 0, 23 + pulse * 2, -0.18 * Math.PI, 1.42 * Math.PI);
+  ctx.stroke();
+  ctx.globalAlpha = charging ? 0.35 : 0.58;
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(0, 0, 30 + pulse * 3, 0.55 * Math.PI, 1.92 * Math.PI);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "#fff0a6";
+
   if (type === "gun") {
-    ctx.strokeRect(-18, -16, 9, 9);
-    ctx.strokeRect(-18, 7, 9, 9);
-    ctx.fillRect(27, -7, 6, 3);
-    ctx.fillRect(27, 4, 6, 3);
+    [-12, -4, 4, 12].forEach((offset) => {
+      ctx.fillRect(11, offset - 1.4, 27, 2.8);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(36, offset - 1, 5, 2);
+      ctx.fillStyle = "#fff0a6";
+    });
+    [-16, 8].forEach((y) => {
+      ctx.strokeRect(-22, y, 10, 8);
+      ctx.fillRect(-19, y + 3, 4, 2);
+    });
+    ctx.beginPath();
+    ctx.moveTo(-17, -20);
+    ctx.lineTo(5, -24);
+    ctx.lineTo(26, -18);
+    ctx.stroke();
   }
   if (type === "cannon") {
     ctx.beginPath();
-    ctx.arc(0, 0, 21, -0.25 * Math.PI, 1.18 * Math.PI);
+    ctx.arc(0, 0, 23, -0.35 * Math.PI, 1.25 * Math.PI);
     ctx.stroke();
-    ctx.fillRect(28, -8, 7, 16);
-  }
-  if (type === "ice") {
-    for (let i = 0; i < 8; i += 1) {
-      const angle = (Math.PI * 2 * i) / 8;
+    ctx.fillRect(28, -10, 9, 20);
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fillRect(31, -5, 9, 10);
+    ctx.fillStyle = "#fff0a6";
+    for (let i = 0; i < 4; i += 1) {
+      const y = -13 + i * 8;
       ctx.beginPath();
-      ctx.moveTo(Math.cos(angle) * 20, Math.sin(angle) * 20);
-      ctx.lineTo(Math.cos(angle) * 28, Math.sin(angle) * 28);
+      ctx.moveTo(-23, y);
+      ctx.lineTo(-12, y + (i % 2 ? -3 : 3));
       ctx.stroke();
     }
   }
-  if (type === "pierce") {
+  if (type === "ice") {
+    for (let i = 0; i < 10; i += 1) {
+      const angle = (Math.PI * 2 * i) / 10;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * 17, Math.sin(angle) * 17);
+      ctx.lineTo(Math.cos(angle) * 31, Math.sin(angle) * 31);
+      ctx.stroke();
+      const cx = Math.cos(angle) * 25;
+      const cy = Math.sin(angle) * 25;
+      ctx.fillStyle = i % 2 ? "#ffffff" : "#fff0a6";
+      drawPolygon([
+        [cx, cy - 3],
+        [cx + 3, cy],
+        [cx, cy + 3],
+        [cx - 3, cy],
+      ]);
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.92)";
     ctx.beginPath();
-    ctx.moveTo(-18, -13);
-    ctx.lineTo(35, 0);
-    ctx.lineTo(-18, 13);
+    ctx.moveTo(-13, -13);
+    ctx.lineTo(13, 13);
+    ctx.moveTo(13, -13);
+    ctx.lineTo(-13, 13);
     ctx.stroke();
   }
-  if (type === "laser") {
+  if (type === "pierce") {
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(12, 0);
-    ctx.lineTo(35, -13);
-    ctx.moveTo(12, 0);
-    ctx.lineTo(35, 13);
+    ctx.moveTo(-23, -10);
+    ctx.lineTo(35, -10);
+    ctx.moveTo(-23, 10);
+    ctx.lineTo(35, 10);
+    ctx.stroke();
+    ctx.strokeStyle = "#fff0a6";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-20, -17);
+    ctx.lineTo(39, 0);
+    ctx.lineTo(-20, 17);
+    ctx.stroke();
+    ctx.fillRect(20, -3, 16, 6);
+  }
+  if (type === "laser") {
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.moveTo(12, -12);
+    ctx.lineTo(28, 0);
+    ctx.lineTo(12, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#fff0a6";
+    ctx.beginPath();
+    ctx.moveTo(21, 0);
+    ctx.lineTo(41, -17);
+    ctx.moveTo(21, 0);
+    ctx.lineTo(43, 0);
+    ctx.moveTo(21, 0);
+    ctx.lineTo(41, 17);
     ctx.stroke();
   }
   if (type === "shock") {
+    ctx.strokeStyle = "#fff0a6";
     ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
+    ctx.arc(0, 0, 25, 0, Math.PI * 2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(0, 0, 30, 0.2 * Math.PI, 1.65 * Math.PI);
+    ctx.arc(0, 0, 33, 0.2 * Math.PI, 1.65 * Math.PI);
     ctx.stroke();
+    ctx.strokeStyle = "#ffffff";
+    for (let i = 0; i < 6; i += 1) {
+      const angle = (Math.PI * 2 * i) / 6 + pulse * 0.28;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * 17, Math.sin(angle) * 17);
+      ctx.lineTo(Math.cos(angle + 0.16) * 24, Math.sin(angle + 0.16) * 24);
+      ctx.lineTo(Math.cos(angle + 0.3) * 31, Math.sin(angle + 0.3) * 31);
+      ctx.stroke();
+    }
   }
   if (type === "aura") {
+    ctx.strokeStyle = "#fff0a6";
     ctx.beginPath();
     ctx.moveTo(-13, -22);
     ctx.lineTo(-4, -14);
     ctx.lineTo(0, -25);
     ctx.lineTo(4, -14);
     ctx.lineTo(13, -22);
+    ctx.stroke();
+    for (let i = 0; i < 4; i += 1) {
+      const angle = (Math.PI * 2 * i) / 4 + pulse * 0.4;
+      const x = Math.cos(angle) * 25;
+      const y = Math.sin(angle) * 25 - 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,240,166,0.48)";
+      ctx.beginPath();
+      ctx.moveTo(0, -2);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.strokeStyle = "#fff0a6";
+    }
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.beginPath();
+    ctx.arc(0, -2, 21, -0.08 * Math.PI, 1.54 * Math.PI);
     ctx.stroke();
   }
   ctx.restore();
@@ -5597,9 +5772,18 @@ function renderCodex() {
   ui.codexContent.innerHTML = state.codexTab === "towers" ? renderTowerCodex() : renderEnemyCodex();
 }
 
-function towerCodexIcon(type) {
+function towerCodexIcon(type, options = {}) {
   const def = TOWER_TYPES[type];
-  return `<span class="codex-icon codex-tower-icon" style="--icon-color:${def.color}" aria-hidden="true">${towerCodexSvg(type)}</span>`;
+  const level = options.level || 1;
+  const ultimate = Boolean(options.ultimate);
+  const classes = [
+    "codex-icon",
+    "codex-tower-icon",
+    `tower-icon-level-${level}`,
+    ultimate ? "is-ultimate" : "",
+  ].filter(Boolean).join(" ");
+  const label = ultimate ? "终" : String(level);
+  return `<span class="${classes}" style="--icon-color:${def.color}" aria-hidden="true">${towerCodexSvg(type)}<b class="icon-badge">${label}</b></span>`;
 }
 
 function enemyCodexIcon(type) {
@@ -5756,6 +5940,10 @@ function renderTowerCodexSummary() {
         <div class="codex-stats">
           ${stats.map((item) => `<span>${item}</span>`).join("")}
         </div>
+        <div class="ultimate-mini">
+          ${towerCodexIcon(type, { level: 3, ultimate: true })}
+          <span>终改形态：${escapeHtml(ULTIMATE_VISUALS[type].form)}</span>
+        </div>
         <p>${def.text}</p>
         <p class="codex-note">${guide.upgrade}</p>
         <p class="codex-note">无尽终极：${ultimateSummary(type)}</p>
@@ -5782,9 +5970,11 @@ function renderTowerLevelCodex(type) {
         </div>
       </header>
       <p>${def.text}</p>
+      ${renderTowerFormStrip(type)}
       <div class="codex-table-wrap">
         ${renderTowerLevelTable(type)}
       </div>
+      ${renderUltimateCodexPanel(type)}
       <p class="codex-note">${guide.upgrade}</p>
       <p class="codex-note">无尽终极：${ultimateSummary(type)}</p>
       <p>${guide.tactic}</p>
@@ -5799,7 +5989,7 @@ function renderTowerLevelTable(type) {
     const tower = { type, level };
     return `
       <tr>
-        <td>${level}级</td>
+        <td class="level-cell">${towerCodexIcon(type, { level })}<span>${level}级</span></td>
         <td>${towerLevelCostLabel(type, level)}</td>
         <td>${Math.round(towerRange(tower))}</td>
         <td>${Math.round(towerVisionRange(tower))}</td>
@@ -5812,7 +6002,7 @@ function renderTowerLevelTable(type) {
   const ultimateTower = { type, level: 3, ultimate: true };
   const ultimateRow = `
     <tr class="ultimate-row">
-      <td>终改</td>
+      <td class="level-cell">${towerCodexIcon(type, { level: 3, ultimate: true })}<span>终改</span></td>
       <td>终极 ¥${ultimateCost(ultimateTower)}</td>
       <td>${Math.round(towerRange(ultimateTower))}</td>
       <td>${Math.round(towerVisionRange(ultimateTower))}</td>
@@ -5839,6 +6029,49 @@ function renderTowerLevelTable(type) {
   `;
 }
 
+function renderTowerFormStrip(type) {
+  const forms = [
+    { label: "Lv.1", note: "基础形态", level: 1 },
+    { label: "Lv.2", note: "扩展部件", level: 2 },
+    { label: "Lv.3", note: "满级火控", level: 3 },
+    { label: "终改", note: ULTIMATE_VISUALS[type].form, level: 3, ultimate: true },
+  ];
+  return `
+    <div class="tower-form-strip" aria-label="炮塔形态">
+      ${forms.map((form) => `
+        <div class="tower-form${form.ultimate ? " is-ultimate" : ""}">
+          ${towerCodexIcon(type, { level: form.level, ultimate: form.ultimate })}
+          <strong>${form.label}</strong>
+          <span>${escapeHtml(form.note)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderUltimateCodexPanel(type) {
+  const ultimate = ultimateDef(type);
+  const visual = ULTIMATE_VISUALS[type];
+  const tower = { type, level: 3, ultimate: true };
+  return `
+    <section class="ultimate-profile">
+      <div>
+        <span class="screen-kicker">无尽终极</span>
+        <h4>${ultimate.name} / ${escapeHtml(visual.form)}</h4>
+        <p>${escapeHtml(visual.visual)}</p>
+      </div>
+      <div class="ultimate-profile-stats">
+        <span>费用 ¥${ultimateCost(tower)}</span>
+        <span>改造 ${ultimate.duration}s</span>
+        <span>${towerLevelSpecialSummary(tower)}</span>
+      </div>
+      <div class="ultimate-tags">
+        ${visual.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderAuraCodexDetail() {
   const def = TOWER_TYPES.aura;
   const guide = TOWER_GUIDES.aura;
@@ -5852,12 +6085,14 @@ function renderAuraCodexDetail() {
         </div>
       </header>
       <p>${def.text}</p>
+      ${renderTowerFormStrip("aura")}
       <div class="codex-table-wrap">
         ${renderAuraLevelTable()}
       </div>
       <div class="codex-table-wrap">
         ${renderAuraBuffMatrix()}
       </div>
+      ${renderUltimateCodexPanel("aura")}
       <p class="codex-note">光环只影响范围内的非光环塔；同一座塔被多个光环覆盖时，取当前最强的一组加成。</p>
       <p class="codex-note">无尽终极：${ultimateSummary("aura")}</p>
       <p>${guide.tactic}</p>
@@ -5870,7 +6105,7 @@ function renderAuraLevelTable() {
     const tower = { type: "aura", level };
     return `
       <tr>
-        <td>${level}级</td>
+        <td class="level-cell">${towerCodexIcon("aura", { level })}<span>${level}级</span></td>
         <td>${towerLevelCostLabel("aura", level)}</td>
         <td>${Math.round(baseTowerRange(tower))}</td>
         <td>${formatPercent(0.12 + (level - 1) * 0.07)}</td>
@@ -5881,7 +6116,7 @@ function renderAuraLevelTable() {
   const ultimateTower = { type: "aura", level: 3, ultimate: true };
   const ultimateRow = `
     <tr class="ultimate-row">
-      <td>终改</td>
+      <td class="level-cell">${towerCodexIcon("aura", { level: 3, ultimate: true })}<span>终改</span></td>
       <td>终极 ¥${ultimateCost(ultimateTower)}</td>
       <td>${Math.round(baseTowerRange(ultimateTower))}</td>
       <td>全局主增益</td>
@@ -5979,6 +6214,7 @@ function towerLevelSpecialSummary(tower) {
     if (tower.type === "pierce") parts.push(`轨道宽度 ${ULTIMATE_TRANSFORMS.pierce.beamWidth}`);
     if (tower.type === "laser") parts.push(`折射 ${ULTIMATE_TRANSFORMS.laser.branches} 条`);
     if (tower.type === "shock") parts.push("内圈余震");
+    if (tower.type === "aura") parts.push("射程 / 伤害 / 频率全增益");
   }
   return parts.length ? parts.join(" / ") : "持续单体";
 }
