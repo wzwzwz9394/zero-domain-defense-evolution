@@ -4582,7 +4582,6 @@ function drawAuraFields() {
 
 function drawAuraTargetLink(origin, item) {
   const target = center(item.tower);
-  const def = TOWER_TYPES[item.tower.type];
   const ultimateSource = towerHasUltimate(state.towers.find((tower) => tower.id === state.selectedTowerId));
   ctx.save();
   const linkColors = auraLinkColors(item.boost, item.active, ultimateSource);
@@ -4600,18 +4599,7 @@ function drawAuraTargetLink(origin, item) {
     ctx.lineTo(target.x + ox, target.y + oy);
     ctx.stroke();
   });
-
-  ctx.fillStyle = item.active ? "rgba(41, 32, 68, 0.92)" : "rgba(17, 24, 25, 0.86)";
-  ctx.strokeStyle = item.active ? "rgba(196,181,253,0.86)" : "rgba(95,117,110,0.72)";
-  const label = `${def.name} ${formatBoost(item.boost)}`;
-  const width = clamp(label.length * 12, 110, 224);
-  const labelX = clamp(target.x + 16, 8, canvas.width - width - 8);
-  const labelY = clamp(target.y - 34, 8, canvas.height - 28);
-  ctx.fillRect(labelX, labelY, width, 26);
-  ctx.strokeRect(labelX + 0.5, labelY + 0.5, width - 1, 25);
-  ctx.fillStyle = item.active ? "#eee8ff" : "#c9d4d1";
-  ctx.font = "bold 12px sans-serif";
-  ctx.fillText(label, labelX + 8, labelY + 17);
+  drawAuraBoostBadges(target, item.boost, origin, item.active);
   ctx.restore();
 }
 
@@ -4623,6 +4611,47 @@ function auraLinkColors(boost, active, ultimateSource) {
   if (boost.damage > 1) colors.push("rgba(239,199,94,0.8)");
   if (boost.fireRate > 1) colors.push("rgba(107,211,154,0.78)");
   return colors.length ? colors : ["rgba(255,240,166,0.7)"];
+}
+
+function auraBoostBadgeData(boost) {
+  const badges = [];
+  if (boost.range > 1) badges.push({ label: "射", color: "#62c8dc" });
+  if (boost.damage > 1) badges.push({ label: "伤", color: "#efc75e" });
+  if (boost.fireRate > 1) badges.push({ label: "速", color: "#6bd39a" });
+  return badges;
+}
+
+function drawAuraBoostBadges(target, boost, origin, active = true) {
+  if (!active) return;
+  const badges = auraBoostBadgeData(boost);
+  if (!badges.length) return;
+  const awayAngle = Math.atan2(target.y - origin.y, target.x - origin.x) || -Math.PI / 4;
+  const sideAngle = awayAngle + Math.PI / 2;
+  const baseDistance = 30;
+  const spacing = 17;
+  const radius = 8;
+  const baseX = target.x + Math.cos(awayAngle) * baseDistance;
+  const baseY = target.y + Math.sin(awayAngle) * baseDistance;
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 10px sans-serif";
+  badges.forEach((badge, index) => {
+    const offset = (index - (badges.length - 1) / 2) * spacing;
+    const x = clamp(baseX + Math.cos(sideAngle) * offset, radius + 2, canvas.width - radius - 2);
+    const y = clamp(baseY + Math.sin(sideAngle) * offset, radius + 2, canvas.height - radius - 2);
+    ctx.fillStyle = "rgba(8, 17, 15, 0.9)";
+    ctx.strokeStyle = badge.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = badge.color;
+    ctx.fillText(badge.label, x, y + 0.5);
+  });
+  ctx.restore();
 }
 
 function drawAuraBoostMark(tower, c) {
